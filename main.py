@@ -57,8 +57,8 @@ with Rts() as bot:
 				
 				# TODO: hago scraping con el TRAC
 				if bot.open_popup('TRAC', tr, td, pop_workout=False):
+					pass
 					
-		
 		# clica para ir hacia delante
 		bot.find_elements(By.CLASS_NAME, variables.class_calendar_month_click)[1].click()
 		

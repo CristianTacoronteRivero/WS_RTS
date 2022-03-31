@@ -17,7 +17,7 @@ import re
 import pandas as pd
 
 class Rts(webdriver.Chrome):
-	def __init__(self, driver_path = r'D:\Driver_sel', teardown = False):
+	def __init__(self, driver_path = os.getcwd(), teardown = False):
 		self.driver_path = driver_path
 		self.teardown = teardown
 		
