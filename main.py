@@ -21,14 +21,18 @@ with Rts() as bot:
 		
 	workout_monthly = list()
 	
-	if False:
+	if True:
 		# mientras hayan casillas con 'New Workout'...
 		while bot.find_workout('New Workout') or bot.find_workout('Daily Workout'):
+			# obtenemos el mes que hay que esperar
+			month = bot.get_month()
+			
 			# clica para ir hacia atras
 			bot.find_elements(By.CLASS_NAME, variables.class_calendar_month_click)[0].click()
 			
 			# estas funcion se encarga de obtener cual debe ser el mes anterior y no sigue con el bucle hasta que se cargue el calendrio correcto
-			bot.wait_month()
+# 			bot.get_month()
+			bot.wait_presence_text('class_name', variables.class_calendar_month, month)
 			
 		# como se va un mes de más, le obligo que vuelva hacia delante. PENSAR EN COMO OPTIMIZAR ESTO.
 		bot.find_elements(By.CLASS_NAME, variables.class_calendar_month_click)[1].click()
@@ -62,7 +66,7 @@ with Rts() as bot:
 		# clica para ir hacia delante
 		bot.find_elements(By.CLASS_NAME, variables.class_calendar_month_click)[1].click()
 		
-		# estas funcion se encarga de obtener cual debe ser el mes anterior y no sigue con el bucle hasta que se cargue el calendrio correcto
+		# esta funcion se encarga de obtener cual debe ser el mes anterior y no sigue con el bucle hasta que se cargue el calendrio correcto
 		bot.wait_month(past = False)
 		
 	df = bot.report(workout_monthly)

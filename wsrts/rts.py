@@ -278,10 +278,11 @@ class Rts(webdriver.Chrome):
 		
 		return mes_delta
 	
-	def wait_month(self, past = True):
+	def get_month(self, past = True):
 		month = self.find_element(By.CLASS_NAME, variables.class_calendar_month).text
 		month_delta = self.change_month(month, past)
-		self.wait_presence_text('class_name', variables.class_calendar_month, month_delta)
+# 		self.wait_presence_text('class_name', variables.class_calendar_month, month_delta)
+		return month_delta
 		
 	def report(self, workout):
 		df = pd.DataFrame(workout, columns = ['Date', 'Name', 'kgs', 'Reps', 'RPE', 'kgs', 'Reps', 'RPE'])
