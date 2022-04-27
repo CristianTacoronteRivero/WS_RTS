@@ -13,6 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from datetime import datetime, timedelta
+import calendar
 import re
 import pandas as pd
 
@@ -262,18 +263,11 @@ class Rts(webdriver.Chrome):
 		month2 = datetime.strptime(month, '%B %Y')
 		
 		if past:
-			mes_delta = month2 - timedelta(days = 29)
-			if month2.month == mes_delta.month:
-				mes_delta = mes_delta - timedelta(weeks = 1)
-			# pongo a dia 1 mes_delta
-			mes_delta = mes_delta - timedelta(days= mes_delta.day -1)
+			mes_delta = month2 - timedelta(days = 5)
 			mes_delta = datetime.strftime(mes_delta, '%B %Y')
 		else:
-			mes_delta = month2 + timedelta(days = 29)
-			if month2.month == mes_delta.month:
-				mes_delta = mes_delta + timedelta(weeks = 1)
-			# pongo a dia 1 mes_delta
-			mes_delta = mes_delta - timedelta(days= mes_delta.day -1)
+			monthRange = calendar.monthrange(year=month2.year, month=month2.month)
+			mes_delta = month2 + timedelta(days = monthRange[1]+1)
 			mes_delta = datetime.strftime(mes_delta, '%B %Y')
 		
 		return mes_delta

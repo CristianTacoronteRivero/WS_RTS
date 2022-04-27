@@ -27,11 +27,10 @@ with Rts() as bot:
 			# obtenemos el mes que hay que esperar
 			month = bot.get_month()
 			
-			# clica para ir hacia atras
+			# clica para ir hacia ATRAS.OJO. SI QUIERO IR HACIA DELANTE ES [1]
 			bot.find_elements(By.CLASS_NAME, variables.class_calendar_month_click)[0].click()
 			
-			# estas funcion se encarga de obtener cual debe ser el mes anterior y no sigue con el bucle hasta que se cargue el calendrio correcto
-# 			bot.get_month()
+			# espero a que se cargue el mes que debe de aparecer y sigo con el bucle
 			bot.wait_presence_text('class_name', variables.class_calendar_month, month)
 			
 		# como se va un mes de más, le obligo que vuelva hacia delante. PENSAR EN COMO OPTIMIZAR ESTO.
