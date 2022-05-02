@@ -11,7 +11,7 @@ import wsrts.variables as variables
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from datetime import datetime, timedelta
 import calendar
 import re
@@ -102,26 +102,32 @@ class Rts(webdriver.Chrome):
 			return False
 		return True
 		
-	def open_popup(self, text, tr, td, div = 2, pop_workout = True):
+	def open_popup(self, text, tr, td, pop = 'workout'):
 		"""
 		Funcion encargada de abrir los elementos que se encuentran dentro del calendario. Por ejemplo, si se quiere abrir
 		los elementos que contienen como titulo 'New Workout' abre esos, si es 'Daily Workour' abre esos...el string se
 		especifica a traves de la variable text
 		"""
-		if pop_workout:
-			xpath_popup_text = f"{variables.xpath_new_workout['id1']}{tr}{variables.xpath_new_workout['id2']}{td}{variables.xpath_new_workout['id4']}"
-			xpath_popup = f"{variables.xpath_new_workout['id1']}{tr}{variables.xpath_new_workout['id2']}{td}{variables.xpath_new_workout['id3']}{div}{variables.xpath_new_workout['id4']}"
+		if pop == 'workout':
+			xpath_popup = f"//*[@id='Calendar']/tbody/tr[{tr}]/td[{td}]/div[2]"
 		else:
-			xpath_popup_text = f'//*[@id="Calendar"]/tbody/tr[{tr}]/td[{td}]/div[3]/span'
-			xpath_popup = f'//*[@id="Calendar"]/tbody/tr[{tr}]/td[{td}]/div[3]'
+			elementos = self.find_element(By.XPATH, f"//*[@id='Calendar']/tbody/tr[{tr}]/td[{td}]").text.split('\n') # cojo todos los nombres que hay en ese dia
+			elementos = elementos[1:]
+			elementos = [x.lower() for x in elementos] # los añado en una lista y los norm.
+			if pop in elementos:
+				index = elementos.index(pop)+2 # miro el indice de ese pop para pasarselo al div, el workout es 2 siendo en la lista 0, por lo que sumo 2 para que coincida con el div del html
+				xpath_popup = f"//*[@id='Calendar']/tbody/tr[{tr}]/td[{td}]/div[{index}]"
 			
-		if text in self.find_element(By.XPATH, xpath_popup_text).text:
-			self.find_element(By.XPATH, xpath_popup).click()
-			return True
-		else:
+		try:
+			if text.lower() in self.find_element(By.XPATH, xpath_popup).text.lower():
+				self.find_element(By.XPATH, xpath_popup).click()
+				return True
+			else:
+				return False
+		except NoSuchElementException:
 			return False
 		
-	def scraping_TRAC(self):
+	def scraping_trac(self):
 		pass
 		
 	def open_and_close_workout(self, li):
