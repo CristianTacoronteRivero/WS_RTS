@@ -77,3 +77,10 @@ class ctrWS(webdriver.Chrome):
         except TimeoutException:
             return False
         return True
+
+    def wait_dom_attribute(self, locator, attribute, value):
+        element = self.find_element(By.ID, locator)
+        if element.get_dom_attribute(attribute) == value:
+            return element
+        else:
+            False
