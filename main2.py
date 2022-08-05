@@ -12,6 +12,7 @@ import calendar, re
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait
 import numpy as np
+import pandas as pd
 
 
 #%% VARIABLES
@@ -61,18 +62,19 @@ def open_popup(text, tr, td):
 
 def normalize_datetime(date):
     "Funcion encargada de coger la fecha, eliminar los sufijos y darle el formato de datetime"
+    ind=2
     date = date.split()
-    if 'st' in date[1]:
-        date[1] = re.sub(r'st', '', date[1])
-    if 'th' in date[1]:
-        date[1] = re.sub(r'th', '', date[1])
-    if 'rd' in date[1]:
-        date[1] = re.sub(r'rd', '', date[1])
-    if 'nd' in date[1]:
-        date[1] = re.sub(r'nd', '', date[1])
+    if 'st' in date[ind]:
+        date[ind] = re.sub(r'st', '', date[ind])
+    if 'th' in date[ind]:
+        date[ind] = re.sub(r'th', '', date[ind])
+    if 'rd' in date[ind]:
+        date[ind] = re.sub(r'rd', '', date[ind])
+    if 'nd' in date[ind]:
+        date[ind] = re.sub(r'nd', '', date[ind])
 
-    date = ''.join(date)
-    date = datetime.strptime(date, '%A %b %d %Y')
+    date = ' '.join(date)
+    date = datetime.strptime(date, '%A, %b %d, %Y')
     date = date.strftime('%Y-%m-%d')
     return date
 
@@ -81,14 +83,14 @@ def open_or_close_workout(li):
     bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[1]/div[1]").click()
 
 def data_serie(li, div2):
-    weight = bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[2]/div[1]").text.split('\n')
-    if 'weight reps rpe' in weight.lower():
-        data = bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[2]/div[{div2}]")
+    weight = bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[2]/div[1]").text.lower().split('\n')
+    if 'weight reps rpe' in weight:
+        data = bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[2]/div[{div2}]").text.split(' ')
         if data.count('kgs') > 0:
             for dl in range(0, data.count('kgs')):
                 data.remove('kgs')
     else:
-        data = bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[2]/div[{div2}]")
+        data = bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[2]/div[{div2}]").text.split(' ')
         if data.count('h') > 0:
             for dl in range(0, data.count('h')):
                 data.remove('h')
@@ -111,7 +113,7 @@ def scraping_workout():
     for li in range(1, lista_ejercicios+1):
         bot.implicitly_wait(0.5)
         # aqui obtengo el nombre del ejercicio y el numero de sets y ya luego lo abro
-        name_set = bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[1]/div[2]/a")
+        name_set = bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[1]/div[2]/a").text
         sets = int(bot.find_element(By.XPATH, f"//*[@id='IExerciseList']/li[{li}]/div[1]/div[4]/span[2]").text)
         # abro la lista de ese ejercicio y espero a que se complete la apertura
         open_or_close_workout(li)
@@ -119,19 +121,30 @@ def scraping_workout():
 
         # observo una condicion que por ahora no entiendo
         if len(bot.find_element(By.XPATH, f'//*[@id="IExerciseList"]/li[{li}]/div[2]/div[1]/div[1]').text.split('\n')) < 2 or len(bot.find_element(By.XPATH, f'//*[@id="IExerciseList"]/li[{li}]/div[2]/div[1]/div[2]').text.split('\n')) < 2:
+            open_or_close_workout(li)
             continue
 
-        # una vez cargado voy serie por serie cogiendo los datos
+        bot.implicitly_wait(0.15)
+        # una vez cargado voy serie por serie de ese mismo ejer cogiendo los datos
         for div2 in range(2, sets+2):
             # saco los datos de cada serie
             data = data_serie(li, div2)
             # y añado el nombre y la fecha del ejercicio
             data.insert(0, name_set)
             data.insert(0, workout_fecha)
-        return data
+
+            workout_daily.append(data)
+    return workout_daily
 
 def close_popup():
     bot.find_element(By.ID, 'PopupCancel').click()
+
+def report(workout, save=True):
+    df = pd.DataFrame(workout, columns = ['Date', 'Name', 'kgs', 'Reps', 'RPE', 'kgs', 'Reps', 'RPE'])
+    df = df.drop_duplicates()
+    if save:
+        df.to_excel(f"{datetime.now().strftime('%Y%m%d%H%M%S')}_RTS.xlsx")
+    return df
 
 
 #%% CODIGO
@@ -145,7 +158,7 @@ with ctrWS() as bot:
         bot.get_url(url_calendario)
 
 #%%% retroceso en el calendario
-    if False:
+    if True:
         # mientras hayan casillas con 'New Workout', 'Daily workout', etc.
         while find_workout('New Workout') or find_workout('Daily Workout') or find_workout('Nuevo Entrenamiento'):
             # obtenemos el mes anterior
@@ -183,5 +196,14 @@ with ctrWS() as bot:
                 workout_monthly.extend(work_daily)
 
                 # una vez finalizado la recabacion de datos de este dia, cierro el popup y voy al siguiente dia
-                bot.implicitly_wait(0.25)
+                bot.implicitly_wait(0.15)
                 close_popup()
+                bot.implicitly_wait(0.15)
+
+                # clica para ir hacia delante y espero que se cargue el calendario
+        bot.find_elements(By.CLASS_NAME, 'Clickable')[1].click()
+        month = get_month(past=False)
+        bot.wait_presence_text('class_name', 'CalText', month)
+
+#%%% creacion del archivo xlsx
+    df = report(workout_monthly)
